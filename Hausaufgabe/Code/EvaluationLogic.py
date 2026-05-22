@@ -1,12 +1,22 @@
+from __future__ import annotations
+
 from OutputData import *
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from InputData import InputData
 
 
 class EvaluationLogic:
-    def __init__(self, inputData):
+    """Berechnet Bewertungskennzahlen für Lösungen."""
+
+    def __init__(self, inputData: InputData) -> None:
+        """Initialisiert die Bewertungslogik mit den Eingabedaten."""
         self.InputData = inputData
 
 
-    def CalculateNumberOfBins(self, solution): # Berechnung der Bin Anzahl --> einziges Entschiedungskriterium
+    def CalculateNumberOfBins(self, solution: Solution) -> None: # Berechnung der Bin Anzahl --> einziges Entschiedungskriterium
+        """Berechnet Anzahl und Gewichte der verwendeten Bins einer Lösung."""
         Bins = {}
         allocation = solution.Allocation
 

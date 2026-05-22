@@ -1,16 +1,27 @@
+from __future__ import annotations
+
 import numpy as np
 import os
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from InputData import InputData
 
 class Solution:
-    def __init__(self, allocation):
+    """Repräsentiert eine Zuordnung von Items zu Bins."""
+
+    def __init__(self, allocation: dict[int, int]) -> None:
+        """Initialisiert eine Lösung mit einer gegebenen Item-Bin-Zuordnung."""
         self.Allocation = allocation
         self.NumberOfBins = np.inf 
         self.Bins = dict()
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Gibt eine kurze Beschreibung der Lösung zurück."""
         return f"The number of bins is {self.NumberOfBins}."
     
-    def FeasibilityCheck(self, inputData): # Überprüfung der erzeugten Lösung mittels Feasibility Check
+    def FeasibilityCheck(self, inputData: InputData) -> None: # Überprüfung der erzeugten Lösung mittels Feasibility Check
+        """Prüft, ob alle Bins die Kapazitätsgrenze einhalten."""
 
         finalAllocation = self.Allocation
 
@@ -36,19 +47,26 @@ class Solution:
 
 
 class SolutionPool: # Lösungen innerhalb der Suche werden dem Solution Pool hinzugefügt
-    def __init__(self):
+    """Verwaltet gefundene Lösungen während der Suche."""
+
+    def __init__(self) -> None:
+        """Initialisiert einen leeren Lösungspool."""
         self._Solutions = []
 
-    def AddSolution(self, newSolution):
+    def AddSolution(self, newSolution: Solution) -> None:
+        """Fügt dem Lösungspool eine neue Lösung hinzu."""
         self._Solutions.append(newSolution)
 
-    def ClearSolutionPool(self):
+    def ClearSolutionPool(self) -> None:
+        """Entfernt alle Lösungen aus dem Lösungspool."""
         self._Solutions = []
 
-    def GetLowestNumberOfBinsSolution(self): # Hier wird die beste (aktuelle) Lösung ermittelt
+    def GetLowestNumberOfBinsSolution(self) -> Solution: # Hier wird die beste (aktuelle) Lösung ermittelt
+        """Gibt die Lösung mit der geringsten Anzahl an Bins zurück."""
         self._Solutions.sort(key=lambda solution: solution.NumberOfBins)
         return self._Solutions[0]
 
     @property
-    def Solutions(self):
+    def Solutions(self) -> list[Solution]:
+        """Gibt alle gespeicherten Lösungen zurück."""
         return self._Solutions

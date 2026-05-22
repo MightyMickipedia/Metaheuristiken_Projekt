@@ -1,16 +1,23 @@
+from __future__ import annotations
+
 from OutputData import *
 from InputData import *
 import EvaluationLogic
+import numpy as np
 
 
 class ConstructiveHeuristics:
-    def __init__(self, evaluationLogic, solutionPool, rng):
+    """Erzeugt Startlösungen mit konstruktiven Heuristiken."""
+
+    def __init__(self, evaluationLogic: EvaluationLogic.EvaluationLogic, solutionPool: SolutionPool, rng: np.random.Generator) -> None:
+        """Initialisiert die Heuristiken mit Bewertung, Lösungspool und Zufallsgenerator."""
         self.EvaluationLogic = evaluationLogic
         self.SolutionPool = solutionPool
         self.RNG = rng
 
 
-    def BinPerItem(self, data): # Jedes Item wird in einen eigenen Bin platziert
+    def BinPerItem(self, data: InputData) -> Solution: # Jedes Item wird in einen eigenen Bin platziert
+        """Erzeugt eine Lösung, in der jedes Item einem eigenen Bin zugeordnet wird."""
         allocation = dict()
         itemList = data.InputItems
 
@@ -24,7 +31,8 @@ class ConstructiveHeuristics:
 
 
 
-    def Run(self, inputData, solutionMethod, rng): # Ausführung der Constructive Heuristics
+    def Run(self, inputData: InputData, solutionMethod: str, rng: np.random.Generator) -> None: # Ausführung der Constructive Heuristics
+        """Führt die gewählte konstruktive Heuristik aus und speichert die Lösung."""
         print('Generating an initial solution according to ' + solutionMethod + '.')
 
         if solutionMethod == 'BPI':
