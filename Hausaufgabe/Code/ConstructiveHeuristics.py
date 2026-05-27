@@ -29,7 +29,25 @@ class ConstructiveHeuristics:
         self.EvaluationLogic.CalculateNumberOfBins(tmpsolution)
         return tmpsolution
 
+    def FitAsManyAsPossible(self,data:InputData) -> Solution:
+        """Erzeugt eine Lösung, bei der in der Reihenfolge in der die Items ankommen in Bins gepackt werden, wenn einer voll ist, wird ein neuer eröffnet."""
 
+        allocation = dict()
+        current_capacity = 0
+        itemList = data.InputItems
+        current_bin_ID = 0
+        allocation[current_bin_ID] = [] 
+        for item in itemList:
+            if current_capacity + item.weight > data.InputBinCapacity:
+                current_bin_ID +=1
+                allocation[current_bin_ID] = []
+            allocation[current_bin_ID].append(item.itemID)
+        
+        tmpsolution = Solution(allocation)
+
+        self.EvaluationLogic.CalculateNumberOfBins(tmpsolution)
+        return tmpsolution
+   
 
     def Run(self, inputData: InputData, solutionMethod: str, rng: np.random.Generator) -> None: # Ausführung der Constructive Heuristics
         """Führt die gewählte konstruktive Heuristik aus und speichert die Lösung."""
@@ -37,6 +55,8 @@ class ConstructiveHeuristics:
 
         if solutionMethod == 'BPI':
             solution = self.BinPerItem(inputData)
+        elif solutionMethod == "FAMAP": 
+            solution = self.FitAsManyAsPossible(inputData)
         else:
             print('Unknown constructive solution method: ' + solutionMethod + '.')
 
