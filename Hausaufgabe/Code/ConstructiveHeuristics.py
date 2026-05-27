@@ -9,11 +9,16 @@ import numpy as np
 class ConstructiveHeuristics:
     """Erzeugt Startlösungen mit konstruktiven Heuristiken."""
 
-    def __init__(self, evaluationLogic: EvaluationLogic.EvaluationLogic, solutionPool: SolutionPool, rng: np.random.Generator) -> None:
+    def __init__(
+        self,
+        evaluationLogic: EvaluationLogic.EvaluationLogic,
+        solutionPool: SolutionPool,
+        rng: np.random.Generator | None = None,
+    ) -> None:
         """Initialisiert die Heuristiken mit Bewertung, Lösungspool und Zufallsgenerator."""
         self.EvaluationLogic = evaluationLogic
         self.SolutionPool = solutionPool
-        self.RNG = rng
+        self.RNG = rng if rng is not None else np.random.default_rng()
 
 
     def BinPerItem(self, data: InputData) -> Solution: # Jedes Item wird in einen eigenen Bin platziert
