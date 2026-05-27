@@ -4,6 +4,7 @@ from __future__ import annotations
 import math
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any
+from abc import ABC
 
 if TYPE_CHECKING:
     from EvaluationLogic import EvaluationLogic
@@ -11,7 +12,7 @@ if TYPE_CHECKING:
     from OutputData import SolutionPool
 
 """ Basisklasse für Improvement Algorithms """ 
-class ImprovementAlgorithm:
+class ImprovementAlgorithm(ABC):
     """Basisklasse für Verbesserungsalgorithmen."""
 
     def __init__(self, inputData: InputData, neighborhoodEvaluationStrategy: str = 'FirstImprovement', neighborhoodTypes: list[str] = ['RepackBins']) -> None:
@@ -30,6 +31,13 @@ class ImprovementAlgorithm:
         self.EvaluationLogic = evaluationLogic
         self.SolutionPool = solutionPool
         self.RNG = rng
+    #TODO Impelement neighborhood logic
+
+class simulatedAnnealing(ImprovementAlgorithm):
+    def __init__(self):
+        super.__init__()
+    
+    #TODO Implement SA
 
 
 """ Simulated Annealing or Tabu Search or Variable Neighborhood Search or ..."""

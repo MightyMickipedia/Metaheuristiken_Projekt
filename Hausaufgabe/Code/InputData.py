@@ -2,11 +2,20 @@ from __future__ import annotations
 
 import json
 import os
+from collections.abc import Mapping
+
+
+Number = int | float
+
+
+def _is_number(value: object) -> bool:
+    """Prüft numerische JSON-Werte, ohne bool als Zahl zu akzeptieren."""
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 class DataBinCapacity: # Erstellung der Bin Kapazität
     """Speichert die maximale Kapazität eines Bins."""
 
-    def __init__(self, capacity: int | float) -> None:
+    def __init__(self, capacity: Number) -> None:
         """Initialisiert die Bin-Kapazität."""
         self.__capacity = capacity
 
@@ -15,14 +24,14 @@ class DataBinCapacity: # Erstellung der Bin Kapazität
         return f"The bin weight capacity is {self.__capacity}"
 
     @property
-    def capacity(self) -> int | float:
+    def capacity(self) -> Number:
         """Gibt die gespeicherte Bin-Kapazität zurück."""
         return self.__capacity
 
 class DataItem: # "Erstellung" der Items mit ID und Gewicht
     """Speichert ein Item mit ID und Gewicht."""
 
-    def __init__(self, idItem: int, weight: int | float) -> None:
+    def __init__(self, idItem: int, weight: Number) -> None:
         """Initialisiert ein Item mit seiner ID und seinem Gewicht."""
         self.__itemId = idItem
         self.__weight = weight
@@ -37,7 +46,7 @@ class DataItem: # "Erstellung" der Items mit ID und Gewicht
         return self.__itemId
 
     @property
-    def weight(self) -> int | float:
+    def weight(self) -> Number:
         """Gibt das Gewicht des Items zurück."""
         return self.__weight
 
@@ -56,22 +65,67 @@ class InputData:
             with open(self.__path, "r") as inputFile:
                 inputData = json.load(inputFile)
 
-            self.InputItems = []
-            self.InputBinCapacity = DataBinCapacity(inputData["BinCapacity"])
+            if not isinstance(inputData, Mapping):
+                raise ValueError("Die JSON-Datei muss ein Objekt enthalten.")
 
-            for item in inputData["Items"]:
-                self.InputItems.append(DataItem(item["Id"], item["Weight"]))
+            if "BinCapacity" not in inputData:
+                raise ValueError("Pflichtfeld 'BinCapacity' fehlt.")
+
+            binCapacity = inputData["BinCapacity"]
+            if not _is_number(binCapacity) or binCapacity <= 0:
+                raise ValueError("'BinCapacity' muss eine positive Zahl sein.")
+
+            if "Items" not in inputData:
+                raise ValueError("Pflichtfeld 'Items' fehlt.")
+
+            items = inputData["Items"]
+            if not isinstance(items, list):
+                raise ValueError("'Items' muss eine Liste sein.")
+
+            inputItems = []
+            seenItemIds = set()
+
+            for itemIndex, item in enumerate(items):
+                if not isinstance(item, Mapping):
+                    raise ValueError(f"Item an Position {itemIndex} muss ein Objekt sein.")
+
+                if "Id" not in item:
+                    raise ValueError(f"Item an Position {itemIndex} enthält keine 'Id'.")
+
+                if "Weight" not in item:
+                    raise ValueError(f"Item an Position {itemIndex} enthält kein 'Weight'.")
+
+                itemId = item["Id"]
+                itemWeight = item["Weight"]
+
+                if not isinstance(itemId, int) or isinstance(itemId, bool):
+                    raise ValueError(f"Item an Position {itemIndex}: 'Id' muss eine ganze Zahl sein.")
+
+                if itemId in seenItemIds:
+                    raise ValueError(f"Item-ID {itemId} kommt mehrfach vor.")
+
+                if not _is_number(itemWeight) or itemWeight <= 0:
+                    raise ValueError(f"Item {itemId}: 'Weight' muss eine positive Zahl sein.")
+
+                if itemWeight > binCapacity:
+                    raise ValueError(
+                        f"Item {itemId}: Gewicht {itemWeight} überschreitet BinCapacity {binCapacity}."
+                    )
+
+                seenItemIds.add(itemId)
+                inputItems.append(DataItem(itemId, itemWeight))
+
+            self.InputItems = inputItems
+            self.InputBinCapacity = DataBinCapacity(binCapacity)
 
             print(f'Number of items: {len(self.InputItems)}')
             print(f'Bincapacity: {self.InputBinCapacity.capacity}\n')
 
 
         except FileNotFoundError:
-            print(f"File not found: {self.__path}")
-        except json.JSONDecodeError:
-            print(f"Error decoding JSON from file: {self.__path}")
-        except KeyError as e:
-            print(f"Missing key in JSON data: {e}")
+            raise FileNotFoundError(f"File not found: {self.__path}") from None
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Error decoding JSON from file: {self.__path}") from exc
 
 
     @property
@@ -94,11 +148,22 @@ class Files:
 
     def GetFiles(self) -> list[str]:
         """Gibt relative Pfade aller Dateien im Datenordner zurück."""
-        basePath = os.getcwd()
-        dataPath = os.path.join(basePath, f'../{self.Folder}')
-        paths = list()
+        if os.path.isabs(self.Folder):
+            dataPath = self.Folder
+            relativePrefix = dataPath
+        else:
+            basePath = os.path.dirname(os.path.abspath(__file__))
+            dataPath = os.path.abspath(os.path.join(basePath, "..", self.Folder))
+            relativePrefix = os.path.join("..", self.Folder)
+
+        if not os.path.isdir(dataPath):
+            raise FileNotFoundError(f"Data folder not found: {dataPath}")
+
+        paths = []
 
         for datei in os.listdir(dataPath):
-            paths.append(f'../{self.Folder}/{datei}')
+            fullPath = os.path.join(dataPath, datei)
+            if os.path.isfile(fullPath) and datei.lower().endswith(".json"):
+                paths.append(os.path.join(relativePrefix, datei))
 
-        return paths
+        return sorted(paths)
