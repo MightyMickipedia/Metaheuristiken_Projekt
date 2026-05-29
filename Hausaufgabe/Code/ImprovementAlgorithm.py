@@ -70,6 +70,7 @@ class simulatedAnnealing(ImprovementAlgorithm):
         neighborhoodEvaluationStrategy: str = 'FirstImprovement',
         neighborhoodTypes: list[str] | None = None,
         temperature: float = 0.95,
+        temperature: float = 0.95,
         coolingSpeed: float = 0.1,        
     ) -> None:
         """Initialisiert Simulated Annealing mit den Einstellungen der Basisklasse."""
@@ -86,6 +87,7 @@ class simulatedAnnealing(ImprovementAlgorithm):
             return True
         return currentSolution > neighborSolution          
 
+    def CoolDown(self) -> None:
     def CoolDown(self) -> None:
         """Berechnet die nächste Temperatur."""
         sigma = np.std(self.SolutionPool.Solutions)
