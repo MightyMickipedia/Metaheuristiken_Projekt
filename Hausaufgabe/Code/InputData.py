@@ -126,7 +126,7 @@ class InputData:
             raise FileNotFoundError(f"File not found: {self.__path}") from None
         except json.JSONDecodeError as exc:
             raise ValueError(f"Error decoding JSON from file: {self.__path}") from exc
-
+        
 
     @property
     def path(self) -> str:

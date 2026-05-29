@@ -19,6 +19,11 @@ class Solution:
     def __str__(self) -> str:
         """Gibt eine kurze Beschreibung der Lösung zurück."""
         return f"The number of bins is {self.NumberOfBins}."
+
+    @property
+    def NumberOfItems(self) -> int:
+        """Gibt die Gesamtanzahl der Items in der Lösung zurück."""
+        return len(self.Allocation)
     
     def FeasibilityCheck(self, inputData: InputData) -> None: # Überprüfung der erzeugten Lösung mittels Feasibility Check
         """Prüft, ob alle Bins die Kapazitätsgrenze einhalten."""
