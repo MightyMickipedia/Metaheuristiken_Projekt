@@ -70,7 +70,6 @@ class simulatedAnnealing(ImprovementAlgorithm):
         neighborhoodEvaluationStrategy: str = 'FirstImprovement',
         neighborhoodTypes: list[str] | None = None,
         temperature: float = 0.95,
-        temperature: float = 0.95,
         coolingSpeed: float = 0.1,        
     ) -> None:
         """Initialisiert Simulated Annealing mit den Einstellungen der Basisklasse."""
