@@ -88,7 +88,6 @@ class simulatedAnnealing(ImprovementAlgorithm):
         return currentSolution > neighborSolution          
 
     def CoolDown(self) -> None:
-    def CoolDown(self) -> None:
         """Berechnet die nächste Temperatur."""
         sigma = np.std(self.SolutionPool.Solutions)
         self.temperature = self.temperature / (1 + (self.temperature * (math.log(1+self.coolingSpeed))/3*sigma))
