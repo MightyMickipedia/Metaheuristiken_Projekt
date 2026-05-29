@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, TypeAlias
 
 from OutputData import Solution, SolutionPool
 from copy import deepcopy
+from abc import ABC
 
 if TYPE_CHECKING:
     from EvaluationLogic import EvaluationLogic
@@ -13,7 +14,7 @@ if TYPE_CHECKING:
 Permutation: TypeAlias = list[int]
 
 
-class BaseNeighborhood:
+class BaseNeighborhood(ABC):
     """Basisklasse für Nachbarschaften auf einer Permutationslösung."""
 
     def __init__(
