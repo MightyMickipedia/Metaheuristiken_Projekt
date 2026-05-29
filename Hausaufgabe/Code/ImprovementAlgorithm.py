@@ -69,7 +69,7 @@ class simulatedAnnealing(ImprovementAlgorithm):
         inputData: InputData,
         neighborhoodEvaluationStrategy: str = 'FirstImprovement',
         neighborhoodTypes: list[str] | None = None,
-        temperature: float = 1,
+        temperature: float = 0.95,
         coolingSpeed: float = 0.1,        
     ) -> None:
         """Initialisiert Simulated Annealing mit den Einstellungen der Basisklasse."""
@@ -86,14 +86,29 @@ class simulatedAnnealing(ImprovementAlgorithm):
             return True
         return currentSolution > neighborSolution          
 
-    def CoolDown(self, solutionPool: SolutionPool) -> None:
+    def CoolDown(self) -> None:
         """Berechnet die nächste Temperatur."""
         sigma = np.std(self.SolutionPool.Solutions)
         self.temperature = self.temperature / (1 + (self.temperature * (math.log(1+self.coolingSpeed))/3*sigma))
     
     def Run(self, startSolution: Solution) -> Solution:
         """Führt Simulated Annealing ab einer Startlösung aus."""
-        raise NotImplementedError("Run() must be implemented for simulatedAnnealing.")
+        
+        markovLength = Solution.NumberOfBins * (Solution.NumberOfItems-1)
+        curSolution = startSolution
+        while self.temperature > 0:
+            while len(self.markovChain) < markovLength:
+                neighborhood = self.CreateNeighborhood(self.NeighborhoodTypes[0],curSolution)
+                for move in neighborhood.DiscoverMoves():
+                    newSolution = move.permutation
+                    self.markovChain.AddSolution(newSolution)
+                    if self.AcceptNeighborSolution(newSolution):
+                        curSolution = newSolution
+                        break
+            self.CoolDown()
+            self.markovChain.ClearSolutionPool()
+
+
 
 
 """ Simulated Annealing or Tabu Search or Variable Neighborhood Search or ..."""
