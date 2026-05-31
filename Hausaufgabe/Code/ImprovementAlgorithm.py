@@ -61,7 +61,7 @@ class ImprovementAlgorithm(ABC):
             neighborhood = self.CreateNeighborhood(neighborhoodType, solution)
             self.Neighborhoods[neighborhoodType] = neighborhood
 
-class simulatedAnnealing(ImprovementAlgorithm):
+class SimulatedAnnealing(ImprovementAlgorithm):
     """Platzhalterklasse für ein Simulated-Annealing-Verfahren."""
 
     def __init__(
