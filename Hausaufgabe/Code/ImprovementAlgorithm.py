@@ -9,7 +9,7 @@ from abc import ABC
 import numpy as np
 
 from Neighbourhood import BaseNeighborhood, InsertionNeighborhood, SwapNeighborhood
-from OutputData import Solution
+from OutputData import Solution, SolutionPool
 
 if TYPE_CHECKING:
     from EvaluationLogic import EvaluationLogic
@@ -62,7 +62,7 @@ class ImprovementAlgorithm(ABC):
             self.Neighborhoods[neighborhoodType] = neighborhood
 
 class SimulatedAnnealing(ImprovementAlgorithm):
-    """Platzhalterklasse für ein Simulated-Annealing-Verfahren."""
+    """Simulated Annealing für Bin-Packing-Lösungen."""
 
     def __init__(
         self,
@@ -76,39 +76,78 @@ class SimulatedAnnealing(ImprovementAlgorithm):
         super().__init__(inputData, neighborhoodEvaluationStrategy, neighborhoodTypes)
         self.temperature = temperature
         self.coolingSpeed = coolingSpeed
-        self.markovChain = self.SolutionPool()
+        self.markovChain = SolutionPool()
 
     def AcceptNeighborSolution(self, currentSolution: Solution, neighborSolution: Solution, temperature: float) -> bool:
         """Entscheidet, ob eine Nachbarlösung akzeptiert wird."""
         self.EvaluationLogic.CalculateNumberOfBins(currentSolution)
         self.EvaluationLogic.CalculateNumberOfBins(neighborSolution)
-        if self.RNG.random() <= self.temperature:
+
+        delta = neighborSolution.NumberOfBins - currentSolution.NumberOfBins
+        if delta <= 0:
             return True
-        return currentSolution > neighborSolution          
+
+        acceptanceProbability = math.exp(-delta / max(temperature, 1e-12))
+        return self.RNG.random() <= acceptanceProbability
 
     def CoolDown(self) -> None:
         """Berechnet die nächste Temperatur."""
-        sigma = np.std(self.SolutionPool.Solutions)
-        self.temperature = self.temperature / (1 + (self.temperature * (math.log(1+self.coolingSpeed))/3*sigma))
+        self.temperature *= self.coolingSpeed
+
+    def CreateRandomNeighbor(self, currentSolution: Solution) -> Solution:
+        """Erzeugt eine zufällige zulässige Nachbarlösung durch Umlegen eines Items."""
+        allocation = deepcopy(currentSolution.Allocation)
+        itemIds = list(allocation.keys())
+        sourceItemId = int(self.RNG.choice(itemIds))
+        sourceBinId = allocation[sourceItemId]
+        binIds = sorted(set(allocation.values()))
+        candidateBinIds = [binId for binId in binIds if binId != sourceBinId]
+
+        if not candidateBinIds:
+            return Solution(allocation)
+
+        targetBinId = int(self.RNG.choice(candidateBinIds))
+        targetWeight = sum(
+            self.InputData.InputItems[itemId].weight
+            for itemId, binId in allocation.items()
+            if binId == targetBinId
+        )
+        itemWeight = self.InputData.InputItems[sourceItemId].weight
+
+        if targetWeight + itemWeight <= self.InputData.InputBinCapacity.capacity:
+            allocation[sourceItemId] = targetBinId
+
+        neighborSolution = Solution(allocation)
+        self.EvaluationLogic.CalculateNumberOfBins(neighborSolution)
+        return neighborSolution
     
     def Run(self, startSolution: Solution) -> Solution:
         """Führt Simulated Annealing ab einer Startlösung aus."""
-        
-        markovLength = Solution.NumberOfBins * (Solution.NumberOfItems-1)
-        curSolution = startSolution
-        while self.temperature > 0:
-            while len(self.markovChain) < markovLength:
-                neighborhood = self.CreateNeighborhood(self.NeighborhoodTypes[0],curSolution)
-                for move in neighborhood.DiscoverMoves():
-                    newSolution = move.permutation
-                    self.markovChain.AddSolution(newSolution)
-                    if self.AcceptNeighborSolution(newSolution):
-                        curSolution = newSolution
-                        break
+
+        self.EvaluationLogic.CalculateNumberOfBins(startSolution)
+        currentSolution = startSolution
+        bestSolution = deepcopy(startSolution)
+        markovLength = min(
+            max(1, startSolution.NumberOfBins * max(1, startSolution.NumberOfItems - 1)),
+            1000,
+        )
+
+        while self.temperature > 1e-6:
+            while len(self.markovChain.Solutions) < markovLength:
+                neighborSolution = self.CreateRandomNeighbor(currentSolution)
+                self.markovChain.AddSolution(neighborSolution)
+
+                if self.AcceptNeighborSolution(currentSolution, neighborSolution, self.temperature):
+                    currentSolution = neighborSolution
+
+                    if currentSolution.NumberOfBins < bestSolution.NumberOfBins:
+                        bestSolution = deepcopy(currentSolution)
+                        self.SolutionPool.AddSolution(bestSolution)
+
             self.CoolDown()
             self.markovChain.ClearSolutionPool()
-        
-        return curSolution
+
+        return bestSolution
 
 
 
