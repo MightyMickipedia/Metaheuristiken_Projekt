@@ -61,6 +61,7 @@ class ImprovementAlgorithm(ABC):
             neighborhood = self.CreateNeighborhood(neighborhoodType, solution)
             self.Neighborhoods[neighborhoodType] = neighborhood
 
+
 class SimulatedAnnealing(ImprovementAlgorithm):
     """Simulated Annealing für Bin-Packing-Lösungen."""
 
@@ -70,12 +71,14 @@ class SimulatedAnnealing(ImprovementAlgorithm):
         neighborhoodEvaluationStrategy: str = 'FirstImprovement',
         neighborhoodTypes: list[str] | None = None,
         temperature: float = 0.95,
-        coolingSpeed: float = 0.1,        
+        coolingSpeed: float = 0.1,      
+        threshold : float = 1e-6,  
     ) -> None:
         """Initialisiert Simulated Annealing mit den Einstellungen der Basisklasse."""
         super().__init__(inputData, neighborhoodEvaluationStrategy, neighborhoodTypes)
         self.temperature = temperature
         self.coolingSpeed = coolingSpeed
+        self.threshold= threshold
         self.markovChain = SolutionPool()
 
     def AcceptNeighborSolution(self, currentSolution: Solution, neighborSolution: Solution, temperature: float) -> bool:
@@ -88,11 +91,24 @@ class SimulatedAnnealing(ImprovementAlgorithm):
             return True
 
         acceptanceProbability = math.exp(-delta / max(temperature, 1e-12))
+
+       
         return self.RNG.random() <= acceptanceProbability
 
     def CoolDown(self) -> None:
         """Berechnet die nächste Temperatur."""
         self.temperature *= self.coolingSpeed
+
+    def CoolDownFormula(self):
+        """Berechnet die nächste Temperatur nach der Formel in Laarhoven, Aarts & Lenstra (1992)"""
+        # ck+1 = ck / (1 + (ck * ln(1 + d))/ 3 sigmaK)
+        previousSolutions = self.SolutionPool.Solutions  
+        previousResults = [sol.NumberOfBins for sol in previousSolutions]
+        sigma = np.std(previousResults) #the standard deviation of the cost values of the configurations obtained by generating the kth Markov chain
+            
+        #sigma = self.SolutionPool.Solutions # standardabweichung der anzahl der bins der permutationen
+        self.temperature = self.temperature / (1 + (self.temperature * np.log(1 + self.coolingSpeed) / 3 * sigma))
+
 
     def CreateRandomNeighbor(self, currentSolution: Solution) -> Solution:
         """Erzeugt eine zufällige zulässige Nachbarlösung durch Umlegen eines Items."""
@@ -150,6 +166,40 @@ class SimulatedAnnealing(ImprovementAlgorithm):
         return bestSolution
 
 
+    def CreateNeighbor(self,currentSolution: Solution) ->Solution:
+        neighborSolution = deepcopy(currentSolution)
+        self.EvaluationLogic.CalculateNumberOfBins(neighborSolution)
+             
+        #move any random item into a new bin that has enough space 
+        movedItemId = np.random.choice(list(neighborSolution.Allocation.keys()))
+        movedItem = self.InputData.InputItems[movedItemId]
+        maximum_capacity = self.InputData.InputBinCapacity.capacity
+        candidates = [bin  for bin in neighborSolution.Bins if (maximum_capacity - neighborSolution.Bins[bin]) >= movedItem.weight]
+        if len(candidates) > 0 :
+            newBinId = np.random.choice(candidates)
+        else:
+            newBinId = neighborSolution.NumberOfBins + 1
+
+        neighborSolution.Allocation[movedItemId] = newBinId
+
+        self.EvaluationLogic.CalculateNumberOfBins(neighborSolution)
+        return neighborSolution
 
 
-""" Simulated Annealing or Tabu Search or Variable Neighborhood Search or ..."""
+    def Run2(self, startSolution:Solution) -> Solution:
+        
+        currentSolution = deepcopy(startSolution)
+        while self.temperature > self.threshold:
+            #print(self.temperature)
+            neighbor = self.CreateNeighbor(currentSolution)
+            self.EvaluationLogic.CalculateNumberOfBins(currentSolution)
+            self.EvaluationLogic.CalculateNumberOfBins(neighbor)
+            if(neighbor.NumberOfBins < currentSolution.NumberOfBins) :
+                self.SolutionPool.AddSolution(neighbor)
+                self.CoolDownFormula()
+            else :
+                acceptanceCriterium = min(1, np.exp(- (neighbor.NumberOfBins - currentSolution.NumberOfBins) / self.temperature))
+                if( np.random.random() > acceptanceCriterium):
+                    self.SolutionPool.AddSolution(neighbor)
+                    self.CoolDownFormula()
+        return self.SolutionPool.Solutions[-1] 

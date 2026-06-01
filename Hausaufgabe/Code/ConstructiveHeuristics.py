@@ -41,13 +41,14 @@ class ConstructiveHeuristics:
         current_capacity = 0
         itemList = data.InputItems
         current_bin_ID = 0
-        allocation[current_bin_ID] = [] 
+        maximum_capacity = data.InputBinCapacity.capacity
         for item in itemList:
-            if current_capacity + item.weight > data.InputBinCapacity:
+            if current_capacity + item.weight > maximum_capacity: #wenn kapazität des aktuellen bins überschritten würde, wird ein neuer erzeugt
                 current_bin_ID +=1
-                allocation[current_bin_ID] = []
-            allocation[current_bin_ID].append(item.itemID)
-        
+                current_capacity = 0
+            allocation[item.itemId] = current_bin_ID
+            current_capacity += item.weight
+                  
         tmpsolution = Solution(allocation)
 
         self.EvaluationLogic.CalculateNumberOfBins(tmpsolution)
