@@ -15,6 +15,8 @@ class Solution:
         self.Allocation = allocation
         self.NumberOfBins = np.inf 
         self.Bins = dict()
+        self.BinWeights = dict()
+
 
     def __str__(self) -> str:
         """Gibt eine kurze Beschreibung der Lösung zurück."""
@@ -25,30 +27,35 @@ class Solution:
         """Gibt die Gesamtanzahl der Items in der Lösung zurück."""
         return len(self.Allocation)
     
-    def FeasibilityCheck(self, inputData: InputData) -> None: # Überprüfung der erzeugten Lösung mittels Feasibility Check
+    def FeasibilityCheckOutput(self,inputData:InputData) -> None:
+        if self.FeasibilityCheck(inputData):
+            print("The allocation is feasible! All bins remain within their capacity.")
+        else : 
+            print("The allocation is not feasible!")
+
+        print("Maximum weight in a bin:", max(self.binWeights.values()))
+        print("Minimum weight in a bin:", min(self.binWeights.values()))
+
+
+    def FeasibilityCheck(self, inputData: InputData) -> bool: # Überprüfung der erzeugten Lösung mittels Feasibility Check
         """Prüft, ob alle Bins die Kapazitätsgrenze einhalten."""
 
         finalAllocation = self.Allocation
 
-        binWeights = {value: 0 for value in sorted(set(finalAllocation.values()))}
+        self.binWeights = {value: 0 for value in sorted(set(finalAllocation.values()))}
 
         for itemid, binid in finalAllocation.items():
-            binWeights[binid] += inputData.InputItems[itemid].weight
+            self.binWeights[binid] += inputData.InputItems[itemid].weight
 
         feasible = True
-        for binID, weight in binWeights.items():
+        for binID, weight in self.binWeights.items():
             binCapacity = inputData.InputBinCapacity.capacity
             if weight > binCapacity:
-                print(f"The sum of weights ({weight}) in Bin {binID} exceeds the capacity of {binCapacity} units.")
+                #print(f"The sum of weights ({weight}) in Bin {binID} exceeds the capacity of {binCapacity} units.")
+                #TODO : Add a way to see this in output
                 feasible = False
 
-        if feasible:
-            print("The allocation is feasible! All bins remain within their capacity.")
-        else:
-            print("The allocation is not feasible!")
-
-        print("Maximum weight in a bin:", max(binWeights.values()))
-        print("Minimum weight in a bin:", min(binWeights.values()))
+        return feasible
 
 
 class SolutionPool: # Lösungen innerhalb der Suche werden dem Solution Pool hinzugefügt

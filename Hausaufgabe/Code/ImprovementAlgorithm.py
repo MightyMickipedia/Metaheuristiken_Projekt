@@ -8,7 +8,7 @@ from abc import ABC
 
 import numpy as np
 
-from Neighbourhood import BaseNeighborhood, InsertionNeighborhood, SwapNeighborhood
+from Neighbourhood import BaseNeighborhood, RepackItemNeighborhood
 from OutputData import Solution, SolutionPool
 
 if TYPE_CHECKING:
@@ -33,7 +33,7 @@ class ImprovementAlgorithm(ABC):
         self.SolutionPool = {}
 
         self.NeighborhoodEvaluationStrategy = neighborhoodEvaluationStrategy
-        self.NeighborhoodTypes = neighborhoodTypes if neighborhoodTypes is not None else ['RepackBins']
+        self.NeighborhoodTypes = neighborhoodTypes if neighborhoodTypes is not None else ['RepackItems']
         self.Neighborhoods = {}
 
     def Initialize(self, evaluationLogic: EvaluationLogic, solutionPool: SolutionPool, rng: np.random.Generator = np.random.default_rng()) -> None:
@@ -48,10 +48,8 @@ class ImprovementAlgorithm(ABC):
 
     def CreateNeighborhood(self, neighborhoodType: str, bestCurrentSolution: Solution) -> BaseNeighborhood:
         """Erzeugt eine Nachbarschaft des angegebenen Typs für die aktuelle Lösung."""
-        if neighborhoodType == 'Swap':
-            return SwapNeighborhood(self.InputData, bestCurrentSolution.Permutation, self.EvaluationLogic, self.SolutionPool)
-        elif neighborhoodType == 'Insertion':
-            return InsertionNeighborhood(self.InputData, bestCurrentSolution.Permutation, self.EvaluationLogic, self.SolutionPool)
+        if neighborhoodType == 'RepackItem':
+            return RepackItemNeighborhood(self.InputData, bestCurrentSolution, self.EvaluationLogic, self.SolutionPool)
         else:
             raise NotImplementedError(f"Neighborhood type {neighborhoodType} is not implemented.")
 
@@ -170,7 +168,7 @@ class SimulatedAnnealing(ImprovementAlgorithm):
     def CreateNeighbor(self,currentSolution: Solution) ->Solution:
         neighborSolution = deepcopy(currentSolution)
         self.EvaluationLogic.CalculateNumberOfBins(neighborSolution)
-             
+            
         #move any random item into a new bin that has enough space 
         movedItemId = np.random.choice(list(neighborSolution.Allocation.keys()))
         movedItem = self.InputData.InputItems[movedItemId]

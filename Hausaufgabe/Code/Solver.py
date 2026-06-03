@@ -47,7 +47,6 @@ class Solver:
         startSolution = self.ConstructionPhase(constructiveSolutionMethod)
         self.ImprovementPhase(startSolution, algorithm)
         bestSolution = self.SolutionPool.GetLowestNumberOfBinsSolution()
-        bestSolution.FeasibilityCheck(self.InputData)
-
+        bestSolution.FeasibilityCheckOutput(self.InputData)
 
         return bestSolution
