@@ -121,7 +121,7 @@ class SwapMove:
         self.Permutation = list(initialPermutation) # create a copy of the permutation
         self.IndexA = indexA
         self.IndexB = indexB
-
+       
         self.Permutation[indexA] = initialPermutation[indexB]
         self.Permutation[indexB] = initialPermutation[indexA]
         

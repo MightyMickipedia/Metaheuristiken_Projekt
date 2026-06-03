@@ -99,15 +99,15 @@ class SimulatedAnnealing(ImprovementAlgorithm):
         """Berechnet die nächste Temperatur."""
         self.temperature *= self.coolingSpeed
 
-    def CoolDownFormula(self):
+    def CoolDownFormula(self,sigma):
         """Berechnet die nächste Temperatur nach der Formel in Laarhoven, Aarts & Lenstra (1992)"""
         # ck+1 = ck / (1 + (ck * ln(1 + d))/ 3 sigmaK)
         previousSolutions = self.SolutionPool.Solutions  
         previousResults = [sol.NumberOfBins for sol in previousSolutions]
-        sigma = np.std(previousResults) #the standard deviation of the cost values of the configurations obtained by generating the kth Markov chain
+        #sigma = np.std(previousResults) #the standard deviation of the cost values of the configurations obtained by generating the kth Markov chain
             
         #sigma = self.SolutionPool.Solutions # standardabweichung der anzahl der bins der permutationen
-        self.temperature = self.temperature / (1 + (self.temperature * np.log(1 + self.coolingSpeed) / 3 * sigma))
+        self.temperature = self.temperature / (1 + ((self.temperature * np.log(1 + self.coolingSpeed)) / 3 * sigma))
 
 
     def CreateRandomNeighbor(self, currentSolution: Solution) -> Solution:
@@ -148,7 +148,7 @@ class SimulatedAnnealing(ImprovementAlgorithm):
             1000,
         )
 
-        while self.temperature > 1e-6:
+        while self.temperature > self.threshold:
             while len(self.markovChain.Solutions) < markovLength:
                 neighborSolution = self.CreateRandomNeighbor(currentSolution)
                 self.markovChain.AddSolution(neighborSolution)
@@ -159,8 +159,9 @@ class SimulatedAnnealing(ImprovementAlgorithm):
                     if currentSolution.NumberOfBins < bestSolution.NumberOfBins:
                         bestSolution = deepcopy(currentSolution)
                         self.SolutionPool.AddSolution(bestSolution)
-
-            self.CoolDown()
+            sigma = np.std([sol.NumberOfBins for sol in self.markovChain.Solutions])
+            self.CoolDownFormula(sigma)
+            print(self.temperature)
             self.markovChain.ClearSolutionPool()
 
         return bestSolution
@@ -178,7 +179,7 @@ class SimulatedAnnealing(ImprovementAlgorithm):
         if len(candidates) > 0 :
             newBinId = np.random.choice(candidates)
         else:
-            newBinId = neighborSolution.NumberOfBins + 1
+            newBinId = neighborSolution.NumberOfBins
 
         neighborSolution.Allocation[movedItemId] = newBinId
 
