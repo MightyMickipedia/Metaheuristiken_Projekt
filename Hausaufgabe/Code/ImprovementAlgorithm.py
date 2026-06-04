@@ -95,9 +95,6 @@ class SimulatedAnnealing(ImprovementAlgorithm):
        
         return self.RNG.random() <= acceptanceProbability
 
-    def CoolDown(self) -> None:
-        """Berechnet die nächste Temperatur."""
-        self.temperature *= self.coolingSpeed
 
     def CoolDownFormula(self):
         """Berechnet die nächste Temperatur nach der Formel in Laarhoven, Aarts & Lenstra (1992)"""
@@ -105,12 +102,16 @@ class SimulatedAnnealing(ImprovementAlgorithm):
         previousSolutions = self.SolutionPool.Solutions  
         previousResults = [sol.NumberOfBins for sol in previousSolutions]
         sigma = np.std(previousResults) #the standard deviation of the cost values of the configurations obtained by generating the kth Markov chain
-            
+
+        if sigma == 0:
+            self.temperature *= 0.9
+            return
         #sigma = self.SolutionPool.Solutions # standardabweichung der anzahl der bins der permutationen
-        self.temperature = self.temperature / (1 + (self.temperature * np.log(1 + self.coolingSpeed) / 3 * sigma))
+        self.temperature = self.temperature / (1 + (self.temperature * np.log(1 + self.coolingSpeed) / (3 * sigma)))
 
 
     def CreateRandomNeighbor(self, currentSolution: Solution) -> Solution:
+        #TODO Refactor to use Neighbourhood based on string from constructor
         """Erzeugt eine zufällige zulässige Nachbarlösung durch Umlegen eines Items."""
         allocation = deepcopy(currentSolution.Allocation)
         itemIds = list(allocation.keys())
@@ -160,7 +161,7 @@ class SimulatedAnnealing(ImprovementAlgorithm):
                         bestSolution = deepcopy(currentSolution)
                         self.SolutionPool.AddSolution(bestSolution)
 
-            self.CoolDown()
+            self.CoolDownFormula()
             self.markovChain.ClearSolutionPool()
 
         return bestSolution
