@@ -124,7 +124,7 @@ class EmptyBinMove:
         tempSolution = deepcopy(initialSolution)
         initialBins = tempSolution.Bins
         maximumCapacity = inputData.InputBinCapacity.capacity
-
+        self.Allocation = deepcopy(tempSolution.Allocation)
         for item in list(tempSolution.Allocation.keys()):
 
             if self.Allocation[item] == binIndex:
