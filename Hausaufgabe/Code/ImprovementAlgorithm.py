@@ -8,7 +8,7 @@ from abc import ABC
 
 import numpy as np
 
-from Neighbourhood import BaseNeighborhood, RepackItemNeighborhood
+from Neighbourhood import BaseNeighborhood, EmptyBinNeighborhood, RepackItemNeighborhood
 from OutputData import Solution, SolutionPool
 
 if TYPE_CHECKING:
@@ -19,6 +19,12 @@ if TYPE_CHECKING:
 """ Basisklasse für Improvement Algorithms """ 
 class ImprovementAlgorithm(ABC):
     """Basisklasse für Verbesserungsalgorithmen."""
+
+    NeighborhoodRegistry = {
+        'RepackItem': RepackItemNeighborhood,
+        'RepackItems': RepackItemNeighborhood,
+        'EmptyBin': EmptyBinNeighborhood,
+    }
 
     def __init__(
         self,
@@ -47,12 +53,16 @@ class ImprovementAlgorithm(ABC):
         raise NotImplementedError("Run() must be implemented by concrete improvement algorithms.")
 
     def CreateNeighborhood(self, neighborhoodType: str, bestCurrentSolution: Solution) -> BaseNeighborhood:
-        #TODO refactor to support EmptyBin and RepackItems
         """Erzeugt eine Nachbarschaft des angegebenen Typs für die aktuelle Lösung."""
-        if neighborhoodType == 'RepackItem':
-            return RepackItemNeighborhood(self.InputData, bestCurrentSolution, self.EvaluationLogic, self.SolutionPool)
-        else:
-            raise NotImplementedError(f"Neighborhood type {neighborhoodType} is not implemented.")
+        neighborhoodClass = self.NeighborhoodRegistry.get(neighborhoodType)
+        if neighborhoodClass is None:
+            supportedTypes = ', '.join(sorted(self.NeighborhoodRegistry.keys()))
+            raise ValueError(
+                f"Neighborhood type {neighborhoodType} is not implemented. "
+                f"Supported types are: {supportedTypes}."
+            )
+
+        return neighborhoodClass(self.InputData, bestCurrentSolution, self.EvaluationLogic, self.SolutionPool)
 
     def InitializeNeighborhoods(self, solution: Solution) -> None:
         """Initialisiert alle im Algorithmus konfigurierten Nachbarschaften."""
@@ -95,7 +105,7 @@ class SimulatedAnnealing(ImprovementAlgorithm):
         return self.RNG.random() <= acceptanceProbability
 
 
-    def CoolDownFormula(self,sigma):
+    def CoolDownFormula(self):
         """Berechnet die nächste Temperatur nach der Formel in Laarhoven, Aarts & Lenstra (1992)"""
         # ck+1 = ck / (1 + (ck * ln(1 + d))/ 3 sigmaK)
         previousSolutions = self.SolutionPool.Solutions  
@@ -110,35 +120,22 @@ class SimulatedAnnealing(ImprovementAlgorithm):
 
 
     def CreateRandomNeighbor(self, currentSolution: Solution) -> Solution:
-        #TODO Refactor to use Neighbourhood based on string from constructor
-        """Erzeugt eine zufällige zulässige Nachbarlösung durch Umlegen eines Items."""
-        allocation = deepcopy(currentSolution.Allocation)
-        itemIds = list(allocation.keys())
-        sourceItemId = int(self.RNG.choice(itemIds))
-        sourceBinId = allocation[sourceItemId]
-        binIds = sorted(set(allocation.values()))
-        candidateBinIds = [binId for binId in binIds if binId != sourceBinId]
+        """Erzeugt eine zufällige Nachbarlösung mit der ersten konfigurierten Nachbarschaft."""
+        neighborhoodType = self.NeighborhoodTypes[0]
+        neighborhood = self.CreateNeighborhood(neighborhoodType, currentSolution)
+        neighborhood.DiscoverMoves()
 
-        if not candidateBinIds:
-            return Solution(allocation)
+        if not neighborhood.Moves:
+            return currentSolution
 
-        targetBinId = int(self.RNG.choice(candidateBinIds))
-        targetWeight = sum(
-            self.InputData.InputItems[itemId].weight
-            for itemId, binId in allocation.items()
-            if binId == targetBinId
-        )
-        itemWeight = self.InputData.InputItems[sourceItemId].weight
-
-        if targetWeight + itemWeight <= self.InputData.InputBinCapacity.capacity:
-            allocation[sourceItemId] = targetBinId
-
-        neighborSolution = Solution(allocation)
+        selectedMove = self.RNG.choice(neighborhood.Moves)
+        neighborSolution = Solution(selectedMove.Allocation)
         self.EvaluationLogic.CalculateNumberOfBins(neighborSolution)
         return neighborSolution
     
     def Run(self, startSolution: Solution) -> Solution:
         """Führt Simulated Annealing ab einer Startlösung aus."""
+        print("start SA")
 
         self.EvaluationLogic.CalculateNumberOfBins(startSolution)
         currentSolution = startSolution
@@ -150,6 +147,7 @@ class SimulatedAnnealing(ImprovementAlgorithm):
 
         while self.temperature > self.threshold:
             while len(self.markovChain.Solutions) < markovLength:
+                print(len(self.markovChain.Solutions))
                 neighborSolution = self.CreateRandomNeighbor(currentSolution)
                 self.markovChain.AddSolution(neighborSolution)
 
@@ -161,6 +159,7 @@ class SimulatedAnnealing(ImprovementAlgorithm):
                         self.SolutionPool.AddSolution(bestSolution)
 
             self.CoolDownFormula()
+            print(self.temperature)
             self.markovChain.ClearSolutionPool()
 
         return bestSolution
