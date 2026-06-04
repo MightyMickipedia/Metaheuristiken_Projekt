@@ -33,8 +33,8 @@ class Solution:
         else : 
             print("The allocation is not feasible!")
 
-        print("Maximum weight in a bin:", max(self.binWeights.values()))
-        print("Minimum weight in a bin:", min(self.binWeights.values()))
+        print("Maximum weight in a bin:", max(self.BinWeights.values()))
+        print("Minimum weight in a bin:", min(self.BinWeights.values()))
 
 
     def FeasibilityCheck(self, inputData: InputData) -> bool: # Überprüfung der erzeugten Lösung mittels Feasibility Check
@@ -42,13 +42,13 @@ class Solution:
 
         finalAllocation = self.Allocation
 
-        self.binWeights = {value: 0 for value in sorted(set(finalAllocation.values()))}
+        self.BinWeights = {value: 0 for value in sorted(set(finalAllocation.values()))}
 
         for itemid, binid in finalAllocation.items():
-            self.binWeights[binid] += inputData.InputItems[itemid].weight
+            self.BinWeights[binid] += inputData.InputItems[itemid].weight
 
         feasible = True
-        for binID, weight in self.binWeights.items():
+        for binID, weight in self.BinWeights.items():
             binCapacity = inputData.InputBinCapacity.capacity
             if weight > binCapacity:
                 #print(f"The sum of weights ({weight}) in Bin {binID} exceeds the capacity of {binCapacity} units.")

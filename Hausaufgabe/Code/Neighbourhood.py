@@ -110,7 +110,7 @@ class RepackItemNeighborhood(BaseNeighborhood):
                 movedItemId = np.random.choice(list(initialAllocation.keys()))
                 movedItem = self.InputData.InputItems[movedItemId]
                 candidates = [bin  for bin in initialBins if (maximumCapacity - initialBins[bin]) >= movedItem.weight]
-                if len(candidates)==0: return
+                if len(candidates) == 0: return
             
                 binId = np.random.choice(candidates)
                 repackMove = RepackItemMove(initialAllocation, movedItemId, binId)
@@ -119,23 +119,19 @@ class RepackItemNeighborhood(BaseNeighborhood):
 class EmptyBinMove:
     "Leere einen Bin."
     
-    def __init__(self, initialSolution:Solution, binIndex:int) -> None:
+    def __init__(self,inputData:InputData, initialSolution:Solution, binIndex:int) -> None:
         """Erzeugt eine neue Allokation, in der ein Bin geleert wird. Dabei werden die Elemente auf verfügbare Bins verteilt."""
-        self.tempSolution = deepcopy(initialSolution)
-        #tempSolution = Solution(self.Allocation)
+        tempSolution = deepcopy(initialSolution)
+        initialBins = tempSolution.Bins
+        maximumCapacity = inputData.InputBinCapacity.capacity
 
-        initialBins = Solution
         for item in list(self.Allocation.keys()):
             if self.Allocation[item] == binIndex:
-                pass
-            #   candidates = [bin  for bin in initialBins if (maximumCapacity - initialBins[bin]) >= movedItem.weight]
-                  
-            
-
-        #self.Allocation[itemIndex] = binIndex
-      
-
-    pass
+                movedItem = inputData.InputItems[item]
+                candidates = [bin  for bin in initialBins if (maximumCapacity - initialBins[bin]) >= movedItem.weight]
+                if len(candidates) > 0: 
+                    self.Allocation[item]=np.random.choice(candidates)
+    
 
 class EmptyBinNeighborhood(BaseNeighborhood):
 
@@ -149,14 +145,19 @@ class EmptyBinNeighborhood(BaseNeighborhood):
         """Initialisiert die EmptyBin-Nachbarschaft."""
         super().__init__(inputData, initialSolution, evaluationLogic, solutionPool)
 
-    def GetRandomMove(self,):
-        pass
+    def GetRandomMove(self):
+        bins=list(self.InitialSolution.Bins.keys())
+        binId = np.random.choice(bins)
+        emptybinMove = EmptyBinMove(self.InputData,self.InitialSolution, binId)
+        self.Moves.append(emptybinMove)
+        return emptybinMove
 
 
     def DiscoverMoves(self,numberOfMoves:int=50) -> None:
         """Erzeugt alle Nachbarschaften, bei denen ein Bin geleert wird."""
-        NotImplementedError("Discover Moves too big")
-        #TODO: fix
+        for _ in range(numberOfMoves):
+            self.GetRandomMove()
+        
 
         
     
