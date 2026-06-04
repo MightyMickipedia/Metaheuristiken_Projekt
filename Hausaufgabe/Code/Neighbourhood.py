@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from OutputData import Solution, SolutionPool
 from copy import deepcopy
 from abc import ABC
+import numpy as np
 
 if TYPE_CHECKING:
     from EvaluationLogic import EvaluationLogic
@@ -74,7 +75,7 @@ class RepackItemMove:
         self.Allocation[itemIndex] = binIndex
         
 class RepackItemNeighborhood(BaseNeighborhood):
-    """Enthält alle paarweisen Swap-Moves für eine Permutation."""
+    """Enthält n RepackMoves, bei denen n Items in alle möglichen Bins gepackt werden."""
 
     def __init__(
         self,
@@ -87,7 +88,7 @@ class RepackItemNeighborhood(BaseNeighborhood):
         super().__init__(inputData, initialSolution, evaluationLogic, solutionPool)
 
 
-    def DiscoverMoves(self) -> None:
+    def DiscoverMoves(self,numberOfMoves:int=50) -> None:
         """Erzeugt alle möglichen Moves und prüft, ob diese erlaubt sind. Gibt alle legalen Moves zurück."""
         
         self.EvaluationLogic.CalculateNumberOfBins(self.InitialSolution)
@@ -96,9 +97,55 @@ class RepackItemNeighborhood(BaseNeighborhood):
         maximumCapacity = self.InputData.InputBinCapacity.capacity
 
         self.Moves = []
-        for itemId in list(set(initialAllocation.keys())):
-            movedItem = self.InputData.InputItems[itemId]
-            candidates = [bin  for bin in initialBins if (maximumCapacity - initialBins[bin]) >= movedItem.weight]
-            for binId in candidates:
-                repackMove = RepackItemMove(initialAllocation, itemId, binId)
-                self.Moves.append(repackMove)
+        if numberOfMoves == len(initialAllocation.keys()):
+            for itemId in list(set(initialAllocation.keys())):
+                movedItem = self.InputData.InputItems[itemId]
+                candidates = [bin  for bin in initialBins if (maximumCapacity - initialBins[bin]) >= movedItem.weight]
+                for binId in candidates:
+                    repackMove = RepackItemMove(initialAllocation, itemId, binId)
+                    self.Moves.append(repackMove)
+
+        else:             
+            for i in range(numberOfMoves):
+                movedItemId = np.random.choice(list(initialAllocation.keys()))
+                movedItem = self.InputData.InputItems[movedItemId]
+                candidates = [bin  for bin in initialBins if (maximumCapacity - initialBins[bin]) >= movedItem.weight]
+                for binId in candidates:
+                    repackMove = RepackItemMove(initialAllocation, movedItemId, binId)
+                    self.Moves.append(repackMove)
+
+class EmptyBinMove:
+    "Leere einen Bin."
+    
+    def __init__(self, initialAllocation: dict, binIndex:int) -> None:
+        """Erzeugt eine neue Allokation, in der ein Bin geleert wird. Dabei werden die Elemente auf verfgbare Bins verteilt."""
+        self.Allocation = dict(initialAllocation)
+        pass
+        #self.Allocation[itemIndex] = binIndex
+      
+
+    pass
+
+class EmptyBinNeighborhood(BaseNeighborhood):
+
+    def __init__(
+        self,
+        inputData: InputData,
+        initialSolution: Solution,
+        evaluationLogic: EvaluationLogic,
+        solutionPool: SolutionPool,
+    ) -> None:
+        """Initialisiert die EmptyBin-Nachbarschaft."""
+        super().__init__(inputData, initialSolution, evaluationLogic, solutionPool)
+
+    def GetRandomMove(self,):
+        pass
+
+
+    def DiscoverMoves(self,numberOfMoves:int=50) -> None:
+        """Erzeugt alle Nachbarschaften, bei denen ein Bin geleert wird."""
+        NotImplementedError("Discover Moves too big")
+        #TODO: fix
+
+        
+    

@@ -103,9 +103,8 @@ class SimulatedAnnealing(ImprovementAlgorithm):
         previousSolutions = self.SolutionPool.Solutions  
         previousResults = [sol.NumberOfBins for sol in previousSolutions]
         #sigma = np.std(previousResults) #the standard deviation of the cost values of the configurations obtained by generating the kth Markov chain
-            
         #sigma = self.SolutionPool.Solutions # standardabweichung der anzahl der bins der permutationen
-        self.temperature = self.temperature / (1 + ((self.temperature * np.log(1 + self.coolingSpeed)) / 3 * sigma))
+        self.temperature = self.temperature / (1 + ((self.temperature * np.log(1 + self.coolingSpeed)) / (3 * sigma)))
 
 
     def CreateRandomNeighbor(self, currentSolution: Solution) -> Solution:
