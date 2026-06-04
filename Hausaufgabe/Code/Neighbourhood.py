@@ -110,6 +110,8 @@ class RepackItemNeighborhood(BaseNeighborhood):
                 movedItemId = np.random.choice(list(initialAllocation.keys()))
                 movedItem = self.InputData.InputItems[movedItemId]
                 candidates = [bin  for bin in initialBins if (maximumCapacity - initialBins[bin]) >= movedItem.weight]
+                if len(candidates)==0: return
+            
                 binId = np.random.choice(candidates)
                 repackMove = RepackItemMove(initialAllocation, movedItemId, binId)
                 self.Moves.append(repackMove)
