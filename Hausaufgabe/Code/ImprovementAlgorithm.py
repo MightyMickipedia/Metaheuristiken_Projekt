@@ -8,7 +8,7 @@ from abc import ABC
 
 import numpy as np
 
-from Neighbourhood import EmptyBinNeighborhood, RepackItemNeighborhood
+from Neighbourhood import BaseNeighborhood, EmptyBinNeighborhood, RepackItemNeighborhood
 from OutputData import Solution, SolutionPool
 
 if TYPE_CHECKING:
@@ -21,6 +21,7 @@ class ImprovementAlgorithm(ABC):
     """Basisklasse für Verbesserungsalgorithmen."""
 
     NeighborhoodRegistry = {
+        'RepackItem': RepackItemNeighborhood,
         'RepackItems': RepackItemNeighborhood,
         'EmptyBin': EmptyBinNeighborhood,
     }
@@ -150,6 +151,7 @@ class SimulatedAnnealing(ImprovementAlgorithm):
 
         while self.temperature > self.threshold:
             while len(self.markovChain.Solutions) < markovLength:
+                #print(len(self.markovChain.Solutions))
                 neighborSolution = self.CreateRandomNeighbor(currentSolution)
                 self.markovChain.AddSolution(neighborSolution)
 

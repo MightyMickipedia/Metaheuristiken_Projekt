@@ -28,13 +28,9 @@ class FakeItem:
 
 
 class FakeInputData:
-    def __init__(self):
-        self.InputBinCapacity = FakeBinCapacity(10)
-        self.InputItems = [
-            FakeItem(5),
-            FakeItem(3),
-            FakeItem(2),
-        ]
+    def __init__(self, weights=(5, 3, 2), capacity=10):
+        self.InputBinCapacity = FakeBinCapacity(capacity)
+        self.InputItems = [FakeItem(weight) for weight in weights]
 
 
 def initialized_algorithm(neighborhood_types=None, **parameters):
@@ -51,6 +47,14 @@ def initialized_algorithm(neighborhood_types=None, **parameters):
 def start_solution():
     solution = Solution({0: 0, 1: 1, 2: 1})
     return solution
+
+
+def initialized_empty_bin_neighborhood(weights, allocation, capacity=10):
+    input_data = FakeInputData(weights, capacity)
+    evaluation_logic = EvaluationLogic(input_data)
+    solution = Solution(allocation)
+    evaluation_logic.CalculateNumberOfBins(solution)
+    return EmptyBinNeighborhood(input_data, solution, evaluation_logic, SolutionPool()), input_data
 
 
 def test_default_neighborhood_creates_random_repack_neighbor():
@@ -109,3 +113,42 @@ def test_number_of_moves_is_passed_to_neighborhood(monkeypatch):
 
     assert neighbor is not None
     assert discovered_number_of_moves == [7]
+
+
+def test_empty_bin_move_empties_source_bin_and_stays_feasible():
+    neighborhood, input_data = initialized_empty_bin_neighborhood(
+        weights=(5, 3, 2),
+        allocation={0: 0, 1: 1, 2: 1},
+    )
+
+    neighborhood.DiscoverMoves(5)
+
+    assert neighborhood.Moves
+    for move in neighborhood.Moves:
+        move_solution = Solution(move.Allocation)
+        neighborhood.EvaluationLogic.CalculateNumberOfBins(move_solution)
+        assert move.SourceBinId not in set(move.Allocation.values())
+        assert move_solution.NumberOfBins == 1
+        assert move_solution.FeasibilityCheck(input_data)
+
+
+def test_empty_bin_rejects_move_when_source_item_cannot_fit_elsewhere():
+    neighborhood, _ = initialized_empty_bin_neighborhood(
+        weights=(6, 6),
+        allocation={0: 0, 1: 1},
+    )
+
+    neighborhood.DiscoverMoves(5)
+
+    assert neighborhood.Moves == []
+
+
+def test_empty_bin_updates_target_weight_between_source_items():
+    neighborhood, _ = initialized_empty_bin_neighborhood(
+        weights=(4, 4, 3),
+        allocation={0: 0, 1: 0, 2: 1},
+    )
+
+    neighborhood.DiscoverMoves(5)
+
+    assert neighborhood.Moves == []
