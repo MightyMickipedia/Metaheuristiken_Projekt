@@ -22,6 +22,11 @@ def notebook_code() -> str:
     )
 
 
+def notebook_text() -> str:
+    notebook = load_notebook()
+    return "\n".join("".join(cell["source"]) for cell in notebook["cells"])
+
+
 def test_notebook_code_cells_execute_without_data_folder():
     """The linear notebook scaffold should run even before instance data is present."""
 
@@ -44,7 +49,7 @@ def test_notebook_code_cells_execute_without_data_folder():
 
 
 def test_notebook_uses_linear_execution_instead_of_function_scaffold():
-    """Notebook steps should be written directly in cells, not as TODO function wrappers."""
+    """Notebook steps should be written directly in cells, not as function wrappers."""
 
     code = notebook_code()
 
@@ -76,8 +81,8 @@ def test_notebook_uses_linear_execution_instead_of_function_scaffold():
     assert "for result in finalResults:" in code
 
 
-def test_notebook_todos_reference_implementation_files():
-    """TODO pseudocode should tell readers where the actual implementation belongs."""
+def test_notebook_comments_reference_implementation_files():
+    """Notebook code comments should reference the implementation files."""
 
     code = notebook_code()
 
@@ -94,10 +99,10 @@ def test_notebook_todos_reference_implementation_files():
         assert reference in code
 
 
-def test_documentation_checklist_contains_required_assignment_terms():
-    """The checklist should still cover the assignment vocabulary."""
+def test_documentation_contains_required_assignment_terms():
+    """The notebook documentation should cover the assignment vocabulary."""
 
-    code = notebook_code().lower()
+    text = notebook_text().lower()
 
     required_terms = [
         "klassifizierung",
@@ -110,4 +115,4 @@ def test_documentation_checklist_contains_required_assignment_terms():
     ]
 
     for term in required_terms:
-        assert term in code
+        assert term in text
