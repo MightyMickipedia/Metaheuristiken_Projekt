@@ -81,13 +81,15 @@ class SimulatedAnnealing(ImprovementAlgorithm):
         neighborhoodTypes: list[str] | None = None,
         temperature: float = 0.95,
         coolingSpeed: float = 0.1,      
-        threshold : float = 1e-6,  
+        threshold : float = 1e-6,
+        maxMarkovLength: int = 1000, 
     ) -> None:
         """Initialisiert Simulated Annealing mit den Einstellungen der Basisklasse."""
         super().__init__(inputData, neighborhoodEvaluationStrategy, neighborhoodTypes)
         self.temperature = temperature
         self.coolingSpeed = coolingSpeed
         self.threshold= threshold
+        self.maxMarkovLength =maxMarkovLength 
         self.markovChain = SolutionPool()
 
     def AcceptNeighborSolution(self, currentSolution: Solution, neighborSolution: Solution, temperature: float) -> bool:
@@ -142,12 +144,11 @@ class SimulatedAnnealing(ImprovementAlgorithm):
         bestSolution = deepcopy(startSolution)
         markovLength = min(
             max(1, startSolution.NumberOfBins * max(1, startSolution.NumberOfItems - 1)),
-            1000,
+            self.maxMarkovLength,
         )
 
         while self.temperature > self.threshold:
             while len(self.markovChain.Solutions) < markovLength:
-                print(len(self.markovChain.Solutions))
                 neighborSolution = self.CreateRandomNeighbor(currentSolution)
                 self.markovChain.AddSolution(neighborSolution)
 
