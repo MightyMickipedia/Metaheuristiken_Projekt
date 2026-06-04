@@ -8,7 +8,7 @@ from abc import ABC
 
 import numpy as np
 
-from Neighbourhood import BaseNeighborhood, InsertionNeighborhood, SwapNeighborhood
+from Neighbourhood import BaseNeighborhood, RepackItemNeighborhood
 from OutputData import Solution, SolutionPool
 
 if TYPE_CHECKING:
@@ -33,7 +33,7 @@ class ImprovementAlgorithm(ABC):
         self.SolutionPool = {}
 
         self.NeighborhoodEvaluationStrategy = neighborhoodEvaluationStrategy
-        self.NeighborhoodTypes = neighborhoodTypes if neighborhoodTypes is not None else ['RepackBins']
+        self.NeighborhoodTypes = neighborhoodTypes if neighborhoodTypes is not None else ['RepackItems']
         self.Neighborhoods = {}
 
     def Initialize(self, evaluationLogic: EvaluationLogic, solutionPool: SolutionPool, rng: np.random.Generator = np.random.default_rng()) -> None:
@@ -49,10 +49,8 @@ class ImprovementAlgorithm(ABC):
     def CreateNeighborhood(self, neighborhoodType: str, bestCurrentSolution: Solution) -> BaseNeighborhood:
         #TODO refactor to support EmptyBin and RepackItems
         """Erzeugt eine Nachbarschaft des angegebenen Typs für die aktuelle Lösung."""
-        if neighborhoodType == 'Swap':
-            return SwapNeighborhood(self.InputData, bestCurrentSolution.Permutation, self.EvaluationLogic, self.SolutionPool)
-        elif neighborhoodType == 'Insertion':
-            return InsertionNeighborhood(self.InputData, bestCurrentSolution.Permutation, self.EvaluationLogic, self.SolutionPool)
+        if neighborhoodType == 'RepackItem':
+            return RepackItemNeighborhood(self.InputData, bestCurrentSolution, self.EvaluationLogic, self.SolutionPool)
         else:
             raise NotImplementedError(f"Neighborhood type {neighborhoodType} is not implemented.")
 
@@ -97,11 +95,11 @@ class SimulatedAnnealing(ImprovementAlgorithm):
         return self.RNG.random() <= acceptanceProbability
 
 
-    def CoolDownFormula(self):
+    def CoolDownFormula(self,sigma):
         """Berechnet die nächste Temperatur nach der Formel in Laarhoven, Aarts & Lenstra (1992)"""
         # ck+1 = ck / (1 + (ck * ln(1 + d))/ 3 sigmaK)
         previousSolutions = self.SolutionPool.Solutions  
-        previousResults = [sol.NumberOfBins for sol in previousSolutions]
+        previousResults = [sol.NumberOfBins for sol in self.markovChain.Solutions]
         sigma = np.std(previousResults) #the standard deviation of the cost values of the configurations obtained by generating the kth Markov chain
 
         if sigma == 0:
@@ -150,7 +148,7 @@ class SimulatedAnnealing(ImprovementAlgorithm):
             1000,
         )
 
-        while self.temperature > 1e-6:
+        while self.temperature > self.threshold:
             while len(self.markovChain.Solutions) < markovLength:
                 neighborSolution = self.CreateRandomNeighbor(currentSolution)
                 self.markovChain.AddSolution(neighborSolution)
@@ -171,7 +169,7 @@ class SimulatedAnnealing(ImprovementAlgorithm):
     def CreateNeighbor(self,currentSolution: Solution) ->Solution:
         neighborSolution = deepcopy(currentSolution)
         self.EvaluationLogic.CalculateNumberOfBins(neighborSolution)
-             
+            
         #move any random item into a new bin that has enough space 
         movedItemId = np.random.choice(list(neighborSolution.Allocation.keys()))
         movedItem = self.InputData.InputItems[movedItemId]
@@ -180,7 +178,7 @@ class SimulatedAnnealing(ImprovementAlgorithm):
         if len(candidates) > 0 :
             newBinId = np.random.choice(candidates)
         else:
-            newBinId = neighborSolution.NumberOfBins + 1
+            newBinId = neighborSolution.NumberOfBins
 
         neighborSolution.Allocation[movedItemId] = newBinId
 
