@@ -106,21 +106,30 @@ class RepackItemNeighborhood(BaseNeighborhood):
                     self.Moves.append(repackMove)
 
         else:             
-            for i in range(numberOfMoves):
+            for _ in range(numberOfMoves):
                 movedItemId = np.random.choice(list(initialAllocation.keys()))
                 movedItem = self.InputData.InputItems[movedItemId]
                 candidates = [bin  for bin in initialBins if (maximumCapacity - initialBins[bin]) >= movedItem.weight]
-                for binId in candidates:
-                    repackMove = RepackItemMove(initialAllocation, movedItemId, binId)
-                    self.Moves.append(repackMove)
+                binId = np.random.choice(candidates)
+                repackMove = RepackItemMove(initialAllocation, movedItemId, binId)
+                self.Moves.append(repackMove)
 
 class EmptyBinMove:
     "Leere einen Bin."
     
-    def __init__(self, initialAllocation: dict, binIndex:int) -> None:
-        """Erzeugt eine neue Allokation, in der ein Bin geleert wird. Dabei werden die Elemente auf verfgbare Bins verteilt."""
-        self.Allocation = dict(initialAllocation)
-        pass
+    def __init__(self, initialSolution:Solution, binIndex:int) -> None:
+        """Erzeugt eine neue Allokation, in der ein Bin geleert wird. Dabei werden die Elemente auf verfügbare Bins verteilt."""
+        self.tempSolution = deepcopy(initialSolution)
+        #tempSolution = Solution(self.Allocation)
+
+        initialBins = Solution
+        for item in list(self.Allocation.keys()):
+            if self.Allocation[item] == binIndex:
+                pass
+            #   candidates = [bin  for bin in initialBins if (maximumCapacity - initialBins[bin]) >= movedItem.weight]
+                  
+            
+
         #self.Allocation[itemIndex] = binIndex
       
 
