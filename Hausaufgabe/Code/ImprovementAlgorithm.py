@@ -47,6 +47,7 @@ class ImprovementAlgorithm(ABC):
         raise NotImplementedError("Run() must be implemented by concrete improvement algorithms.")
 
     def CreateNeighborhood(self, neighborhoodType: str, bestCurrentSolution: Solution) -> BaseNeighborhood:
+        #TODO refactor to support EmptyBin and RepackItems
         """Erzeugt eine Nachbarschaft des angegebenen Typs für die aktuelle Lösung."""
         if neighborhoodType == 'Swap':
             return SwapNeighborhood(self.InputData, bestCurrentSolution.Permutation, self.EvaluationLogic, self.SolutionPool)
