@@ -13,7 +13,7 @@ if str(CODE_DIR) not in sys.path:
 
 from EvaluationLogic import EvaluationLogic
 from ImprovementAlgorithm import SimulatedAnnealing
-from Neighbourhood import EmptyBinNeighborhood
+from Neighbourhood import EmptyBinNeighborhood, RepackItemNeighborhood
 from OutputData import Solution, SolutionPool
 
 
@@ -37,9 +37,9 @@ class FakeInputData:
         ]
 
 
-def initialized_algorithm(neighborhood_types=None):
+def initialized_algorithm(neighborhood_types=None, **parameters):
     input_data = FakeInputData()
-    algorithm = SimulatedAnnealing(input_data, neighborhoodTypes=neighborhood_types)
+    algorithm = SimulatedAnnealing(input_data, neighborhoodTypes=neighborhood_types, **parameters)
     algorithm.Initialize(
         EvaluationLogic(input_data),
         SolutionPool(),
@@ -93,3 +93,19 @@ def test_random_neighbor_uses_only_first_configured_neighborhood():
 
     assert isinstance(neighbor, Solution)
     assert neighbor.NumberOfBins < np.inf
+
+
+def test_number_of_moves_is_passed_to_neighborhood(monkeypatch):
+    discovered_number_of_moves = []
+
+    def discover_moves(self, numberOfMoves=50):
+        discovered_number_of_moves.append(numberOfMoves)
+        self.Moves = []
+
+    monkeypatch.setattr(RepackItemNeighborhood, "DiscoverMoves", discover_moves)
+    algorithm = initialized_algorithm(numberOfMoves=7)
+
+    neighbor = algorithm.CreateRandomNeighbor(start_solution())
+
+    assert neighbor is not None
+    assert discovered_number_of_moves == [7]
