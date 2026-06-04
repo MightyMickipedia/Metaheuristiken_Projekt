@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-#from Neigborhood import *
 import math
 from copy import deepcopy
 from typing import TYPE_CHECKING
@@ -16,7 +15,6 @@ if TYPE_CHECKING:
     from InputData import InputData
     from OutputData import SolutionPool
 
-""" Basisklasse für Improvement Algorithms """ 
 class ImprovementAlgorithm(ABC):
     """Basisklasse für Verbesserungsalgorithmen."""
 
@@ -105,21 +103,18 @@ class SimulatedAnnealing(ImprovementAlgorithm):
 
         acceptanceProbability = math.exp(-delta / max(temperature, 1e-12))
 
-       
         return self.RNG.random() <= acceptanceProbability
 
 
     def CoolDownFormula(self):
         """Berechnet die nächste Temperatur nach der Formel in Laarhoven, Aarts & Lenstra (1992)"""
         # ck+1 = ck / (1 + (ck * ln(1 + d))/ 3 sigmaK)
-        previousSolutions = self.SolutionPool.Solutions  
         previousResults = [sol.NumberOfBins for sol in self.markovChain.Solutions]
         sigma = np.std(previousResults) #the standard deviation of the cost values of the configurations obtained by generating the kth Markov chain
 
         if sigma == 0:
             self.temperature *= 0.9
             return
-        #sigma = self.SolutionPool.Solutions # standardabweichung der anzahl der bins der permutationen
         self.temperature = self.temperature / (1 + (self.temperature * np.log(1 + self.coolingSpeed) / (3 * sigma)))
 
 
@@ -139,8 +134,6 @@ class SimulatedAnnealing(ImprovementAlgorithm):
     
     def Run(self, startSolution: Solution) -> Solution:
         """Führt Simulated Annealing ab einer Startlösung aus."""
-        print("start SA")
-
         self.EvaluationLogic.CalculateNumberOfBins(startSolution)
         currentSolution = startSolution
         bestSolution = deepcopy(startSolution)
@@ -151,7 +144,6 @@ class SimulatedAnnealing(ImprovementAlgorithm):
 
         while self.temperature > self.threshold:
             while len(self.markovChain.Solutions) < markovLength:
-                #print(len(self.markovChain.Solutions))
                 neighborSolution = self.CreateRandomNeighbor(currentSolution)
                 self.markovChain.AddSolution(neighborSolution)
 
@@ -163,7 +155,6 @@ class SimulatedAnnealing(ImprovementAlgorithm):
                         self.SolutionPool.AddSolution(bestSolution)
 
             self.CoolDownFormula()
-            print(self.temperature)
             self.markovChain.ClearSolutionPool()
 
         return bestSolution

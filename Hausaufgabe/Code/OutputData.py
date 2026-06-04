@@ -51,8 +51,6 @@ class Solution:
         for binID, weight in self.BinWeights.items():
             binCapacity = inputData.InputBinCapacity.capacity
             if weight > binCapacity:
-                #print(f"The sum of weights ({weight}) in Bin {binID} exceeds the capacity of {binCapacity} units.")
-                #TODO : Add a way to see this in output
                 feasible = False
 
         return feasible

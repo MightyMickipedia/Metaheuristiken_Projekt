@@ -29,9 +29,3 @@ class EvaluationLogic:
         solution.Allocation = allocation
         Bins = {key: Bins[key] for key in sorted(Bins.keys())}
         solution.Bins = Bins
-
-
-    """
-    allocation = {itemid : binid}
-    bins = { binid : weight }
-    """

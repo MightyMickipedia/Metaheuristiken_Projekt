@@ -68,7 +68,12 @@ class BaseNeighborhood(ABC):
 class RepackItemMove:
     """Setze ein Element in einen neuen Bin."""
 
-    def __init__(self, initialAllocation: dict, itemIndex:int, binIndex:int) -> None:
+    def __init__(
+            self,
+            initialAllocation: dict,
+            itemIndex:int,
+            binIndex:int
+    ) -> None:
         """Erzeugt eine neue Allokation, in der das Item mit itemIndex in den Bin binIndex platziert wird."""
         self.Allocation = dict(initialAllocation)
         self.Allocation[itemIndex] = binIndex
@@ -167,32 +172,11 @@ class EmptyBinNeighborhood(BaseNeighborhood):
         """Initialisiert die EmptyBin-Nachbarschaft."""
         super().__init__(inputData, initialSolution, evaluationLogic, solutionPool)
 
-    def GetRandomMove(
-        self,
-        sourceBinIds: np.ndarray,
-        sourceMoveData: dict[
-            int,
-            tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray],
-        ],
-        maximumCapacity: float,
-    ):
+    def GetRandomMove(self,sourceBinIds: np.ndarray, sourceMoveData: dict[int,tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray],],maximumCapacity: float,):
         selectedBinIndex = np.random.randint(sourceBinIds.size)
         binId = int(sourceBinIds[selectedBinIndex])
-        (
-            sortedSourceItemIds,
-            sortedSourceItemWeights,
-            targetBinIds,
-            targetBinWeights,
-        ) = sourceMoveData[binId]
-        emptybinMove = EmptyBinMove(
-            self.InitialSolution.Allocation,
-            maximumCapacity,
-            binId,
-            sortedSourceItemIds,
-            sortedSourceItemWeights,
-            targetBinIds,
-            targetBinWeights,
-        )
+        (sortedSourceItemIds,sortedSourceItemWeights,targetBinIds,targetBinWeights,) = sourceMoveData[binId]
+        emptybinMove = EmptyBinMove(self.InitialSolution.Allocation,maximumCapacity,binId,sortedSourceItemIds,sortedSourceItemWeights,targetBinIds,targetBinWeights,)
         if emptybinMove.IsFeasible:
             self.Moves.append(emptybinMove)
         return emptybinMove
