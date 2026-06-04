@@ -8,7 +8,7 @@ from abc import ABC
 
 import numpy as np
 
-from Neighbourhood import BaseNeighborhood, EmptyBinNeighborhood, RepackItemNeighborhood
+from Neighbourhood import EmptyBinNeighborhood, RepackItemNeighborhood
 from OutputData import Solution, SolutionPool
 
 if TYPE_CHECKING:
@@ -21,7 +21,6 @@ class ImprovementAlgorithm(ABC):
     """Basisklasse für Verbesserungsalgorithmen."""
 
     NeighborhoodRegistry = {
-        'RepackItem': RepackItemNeighborhood,
         'RepackItems': RepackItemNeighborhood,
         'EmptyBin': EmptyBinNeighborhood,
     }
@@ -164,42 +163,3 @@ class SimulatedAnnealing(ImprovementAlgorithm):
             self.markovChain.ClearSolutionPool()
 
         return bestSolution
-
-
-    def CreateNeighbor(self,currentSolution: Solution) ->Solution:
-        neighborSolution = deepcopy(currentSolution)
-        self.EvaluationLogic.CalculateNumberOfBins(neighborSolution)
-            
-        #move any random item into a new bin that has enough space 
-        movedItemId = np.random.choice(list(neighborSolution.Allocation.keys()))
-        movedItem = self.InputData.InputItems[movedItemId]
-        maximum_capacity = self.InputData.InputBinCapacity.capacity
-        candidates = [bin  for bin in neighborSolution.Bins if (maximum_capacity - neighborSolution.Bins[bin]) >= movedItem.weight]
-        if len(candidates) > 0 :
-            newBinId = np.random.choice(candidates)
-        else:
-            newBinId = neighborSolution.NumberOfBins
-
-        neighborSolution.Allocation[movedItemId] = newBinId
-
-        self.EvaluationLogic.CalculateNumberOfBins(neighborSolution)
-        return neighborSolution
-
-
-    def Run2(self, startSolution:Solution) -> Solution:
-        
-        currentSolution = deepcopy(startSolution)
-        while self.temperature > self.threshold:
-            #print(self.temperature)
-            neighbor = self.CreateNeighbor(currentSolution)
-            self.EvaluationLogic.CalculateNumberOfBins(currentSolution)
-            self.EvaluationLogic.CalculateNumberOfBins(neighbor)
-            if(neighbor.NumberOfBins < currentSolution.NumberOfBins) :
-                self.SolutionPool.AddSolution(neighbor)
-                self.CoolDownFormula()
-            else :
-                acceptanceCriterium = min(1, np.exp(- (neighbor.NumberOfBins - currentSolution.NumberOfBins) / self.temperature))
-                if( np.random.random() > acceptanceCriterium):
-                    self.SolutionPool.AddSolution(neighbor)
-                    self.CoolDownFormula()
-        return self.SolutionPool.Solutions[-1] 

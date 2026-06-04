@@ -125,7 +125,8 @@ class EmptyBinMove:
         initialBins = tempSolution.Bins
         maximumCapacity = inputData.InputBinCapacity.capacity
 
-        for item in list(self.Allocation.keys()):
+        for item in list(tempSolution.Allocation.keys()):
+
             if self.Allocation[item] == binIndex:
                 movedItem = inputData.InputItems[item]
                 candidates = [bin  for bin in initialBins if (maximumCapacity - initialBins[bin]) >= movedItem.weight]
